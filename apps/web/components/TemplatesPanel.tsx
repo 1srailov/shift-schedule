@@ -30,7 +30,7 @@ export function TemplateCardView({ template, dragging }: { template: ShiftTempla
   return (
     <div
       className={clsx(
-        "flex h-16 w-full items-start justify-between gap-3 rounded border-l-[3px] bg-surface py-2 pl-4 pr-2 text-left",
+        "flex h-16 w-full items-start justify-between gap-3 rounded border-l-[3px] bg-surface py-2 pl-[13px] pr-2 text-left",
         toneClasses[template.color].line,
         dragging && "shadow-pop",
       )}

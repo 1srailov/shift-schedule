@@ -40,7 +40,7 @@ export function SelectionBar({
 
   return (
     <div
-      className="flex min-h-[52px] w-full flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded bg-dark py-2 pl-3 pr-2 text-sm text-white"
+      className="-mb-1 flex min-h-[52px] w-full flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded bg-dark py-2 pl-3 pr-3 text-sm text-white"
       data-testid="selection-bar"
     >
       <div className="flex items-center gap-2.5">
@@ -53,7 +53,7 @@ export function SelectionBar({
         </span>
       </div>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-2">
         <div className="relative" ref={menuRef}>
           <button type="button" className={action} onClick={() => setMenuOpen((o) => !o)} aria-expanded={menuOpen}>
             <IconTemplate size={16} />
