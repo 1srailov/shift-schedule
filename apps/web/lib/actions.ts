@@ -44,7 +44,10 @@ export const editorActions = {
   clear(byCell: Map<CellKey, CellShift>) {
     const s = useEditor.getState();
     const filled = [...s.selection].filter((k) => byCell.has(k));
-    if (!filled.length) return;
+    if (!filled.length) {
+      toast("В выделенных ячейках нет смен");
+      return;
+    }
     s.assign(filled, () => null);
     toast(`Очищено: ${cellsWord(filled.length)} · ${undoHint()} — отменить`);
   },

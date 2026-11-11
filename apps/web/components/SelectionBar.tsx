@@ -96,12 +96,7 @@ export function SelectionBar({
             Изменить
           </button>
         )}
-        <button
-          type="button"
-          className={clsx(action, !hasShifts && "opacity-50 hover:bg-transparent")}
-          disabled={!hasShifts}
-          onClick={() => editorActions.clear(byCell)}
-        >
+        <button type="button" className={action} onClick={() => editorActions.clear(byCell)}>
           <IconTrash size={16} />
           Очистить
         </button>
