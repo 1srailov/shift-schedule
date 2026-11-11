@@ -4,7 +4,7 @@
 
 ![Скриншот](docs/screenshot.png)
 
-**Демо:** http://shifts.178-105-166-92.sslip.io
+**Демо:** https://shifts.178-105-166-92.sslip.io
 
 ---
 
