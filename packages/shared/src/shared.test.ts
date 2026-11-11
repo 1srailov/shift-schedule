@@ -7,6 +7,7 @@ import {
   durationMinutes,
   formatHours,
   getPeriod,
+  isISODate,
   minutesByEmployee,
   normalizeTime,
   periodLabel,
@@ -60,6 +61,14 @@ describe("dates", () => {
   test("navigation across months / years", () => {
     expect(shiftAnchor("2026-01-31", "month", 1)).toBe("2026-02-01");
     expect(shiftAnchor("2026-12-30", "week", 1)).toBe("2027-01-04");
+  });
+  test("validates ISO dates", () => {
+    expect(isISODate("2026-11-12")).toBe(true);
+    expect(isISODate("2028-02-29")).toBe(true);
+    expect(isISODate("2026-02-29")).toBe(false);
+    expect(isISODate("2026-13-45")).toBe(false);
+    expect(isISODate("2026-1-5")).toBe(false);
+    expect(isISODate("garbage")).toBe(false);
   });
   test("labels", () => {
     expect(periodLabel(getPeriod("2026-09-02", "week"), "week")).toBe("31 августа – 6 сентября 2026");

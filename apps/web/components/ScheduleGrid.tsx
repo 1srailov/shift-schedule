@@ -11,7 +11,6 @@ import {
   type CellKey,
   type CellShift,
   type Employee,
-  type ShiftStatus,
   type ShiftTemplate,
   type ViewMode,
 } from "@shifts/shared";
@@ -30,7 +29,7 @@ type Props = {
   days: string[];
   employees: Employee[];
   byCell: Map<CellKey, CellShift>;
-  statusByCell: Map<CellKey, ShiftStatus>;
+  unpublished: ReadonlySet<CellKey>;
   templates: ShiftTemplate[];
   coverage: Record<string, number>;
   minutes: Map<number, number>;
@@ -207,7 +206,7 @@ export function ScheduleGrid(p: Props) {
                       mode={p.mode}
                       shift={shift}
                       tone={shift ? toneOf(shift) : "custom"}
-                      published={p.statusByCell.get(k) === "published"}
+                      unpublished={p.unpublished.has(k)}
                       selected={selection.has(k)}
                       isOver={p.overCell === k}
                       dragging={p.dragging}
@@ -323,7 +322,7 @@ const Cell = memo(function Cell({
   mode,
   shift,
   tone,
-  published,
+  unpublished,
   selected,
   isOver,
   dragging,
@@ -332,7 +331,7 @@ const Cell = memo(function Cell({
   mode: ViewMode;
   shift: CellShift | undefined;
   tone: ShiftTone;
-  published: boolean;
+  unpublished: boolean;
   selected: boolean;
   isOver: boolean;
   dragging: boolean;
@@ -353,7 +352,7 @@ const Cell = memo(function Cell({
       )}
     >
       {shift ? (
-        <DraggableShift cell={cell} shift={shift} tone={tone} mode={mode} selected={highlighted} published={published} />
+        <DraggableShift cell={cell} shift={shift} tone={tone} mode={mode} selected={highlighted} unpublished={unpublished} />
       ) : highlighted ? (
         <IconPlusCircle />
       ) : (
@@ -375,14 +374,14 @@ function DraggableShift({
   tone,
   mode,
   selected,
-  published,
+  unpublished,
 }: {
   cell: CellKey;
   shift: CellShift;
   tone: ShiftTone;
   mode: ViewMode;
   selected: boolean;
-  published: boolean;
+  unpublished: boolean;
 }) {
   const { setNodeRef, listeners, attributes, isDragging } = useDraggable({
     id: `shift:${cell}`,
@@ -394,7 +393,7 @@ function DraggableShift({
       data-shift
       {...listeners}
       {...attributes}
-      aria-label={`Смена ${shift.startTime}–${shift.endTime}${published ? ", опубликована" : ""}`}
+      aria-label={`Смена ${shift.startTime}–${shift.endTime}${unpublished ? ", не опубликована" : ""}`}
       className={clsx(
         "flex w-full cursor-grab touch-none justify-center rounded outline-none active:cursor-grabbing",
         isDragging && "opacity-40",
@@ -404,6 +403,7 @@ function DraggableShift({
         shift={shift}
         tone={tone}
         mode={mode}
+        unpublished={unpublished}
         className={clsx(selected && "ring-1 ring-sel-line ring-offset-0")}
       />
     </div>

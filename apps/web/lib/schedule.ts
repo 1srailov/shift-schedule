@@ -2,6 +2,7 @@
 
 import {
   applyDraft,
+  cellKey,
   computeCoverage,
   diffDraft,
   isEmptyDiff,
@@ -15,6 +16,9 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { useEffect, useMemo, useState } from "react";
 import { api } from "./api";
 import { useEditor, usePeriod } from "./store";
+
+const sameShift = (a: CellShift, b: CellShift | undefined) =>
+  !!b && a.startTime === b.startTime && a.endTime === b.endTime && a.templateId === b.templateId;
 
 const shiftsKey = (from: string, to: string) => ["shifts", from, to] as const;
 const EMPTY: Shift[] = [];
@@ -56,11 +60,17 @@ export function useSchedule() {
 
   const serverShifts = shifts.data ?? EMPTY;
   const byCell = useMemo(() => applyDraft(serverShifts, draft), [serverShifts, draft]);
-  const statusByCell = useMemo(() => {
-    const m = new Map<CellKey, Shift["status"]>();
-    for (const s of serverShifts) m.set(`${s.employeeId}|${s.date}`, s.status);
-    return m;
-  }, [serverShifts]);
+  const serverByCell = useMemo(() => applyDraft(serverShifts, new Map()), [serverShifts]);
+  // Cells employees can't see yet: server drafts plus local, unsaved edits.
+  const unpublished = useMemo(() => {
+    const published = new Set<CellKey>();
+    for (const s of serverShifts) if (s.status === "published") published.add(cellKey(s.employeeId, s.date));
+    const out = new Set<CellKey>();
+    for (const [k, s] of byCell) {
+      if (!published.has(k) || (draft.has(k) && !sameShift(s, serverByCell.get(k)))) out.add(k);
+    }
+    return out;
+  }, [serverShifts, byCell, draft]);
 
   const derived = useMemo(() => {
     const list = [...byCell.values()];
@@ -77,7 +87,7 @@ export function useSchedule() {
     employeesLoading: employees.isLoading,
     templates: templates.data ?? [],
     byCell,
-    statusByCell,
+    unpublished,
     loading: shifts.isLoading || employees.isLoading || templates.isLoading,
     error: shifts.error ?? employees.error ?? templates.error,
     refetch: () => {
@@ -114,12 +124,16 @@ export function useSaveSchedule() {
   const resetDraft = useEditor((s) => s.resetDraft);
   const period = usePeriod();
 
+  // Inactive periods stay in the cache (gcTime: Infinity) and feed diffDraft,
+  // so they must be refreshed too — otherwise a stale period can mask an edit.
+  const refreshAllPeriods = () => qc.invalidateQueries({ queryKey: ["shifts"], refetchType: "all" });
+
   const persist = async () => {
     const diff = diffDraft(loadedShifts(qc), useEditor.getState().draft);
     if (isEmptyDiff(diff)) return { changed: 0 };
     const draftAtSave = useEditor.getState().draft;
     const res = await api.saveShifts(diff);
-    await qc.invalidateQueries({ queryKey: ["shifts"] });
+    await refreshAllPeriods();
     // Only drop the draft if nothing was edited while the request was in flight.
     if (useEditor.getState().draft === draftAtSave) resetDraft();
     return { changed: res.saved + res.deleted };
@@ -130,7 +144,7 @@ export function useSaveSchedule() {
     mutationFn: async () => {
       await persist();
       const res = await api.publish(period.from, period.to);
-      await qc.invalidateQueries({ queryKey: ["shifts"] });
+      await refreshAllPeriods();
       return res;
     },
   });

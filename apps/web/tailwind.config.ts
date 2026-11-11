@@ -30,6 +30,7 @@ export default {
         },
         gray: { DEFAULT: "#F2F3F7", hover: "#E7E8EE", active: "#CDCDD6", disabled: "#C1C1C3" },
         sel: { bg: "#EBEFFD", line: "#5B7DEC" },
+        warn: "#F59E0B",
         cover: { ok: "#EBEFFD", "ok-text": "#1C4AE5", none: "#FBE5E5", "none-text": "#DC2626" },
         tpl: {
           blue: "#E8EDFC",

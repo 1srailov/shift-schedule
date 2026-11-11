@@ -12,7 +12,7 @@ import {
   type DragOverEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { periodLabel, type CellKey, type ShiftTemplate } from "@shifts/shared";
+import { isISODate, periodLabel, type CellKey, type ShiftTemplate } from "@shifts/shared";
 import { useEffect, useState } from "react";
 import { editorActions } from "@/lib/actions";
 import { usePendingChanges, useSaveSchedule, useSchedule } from "@/lib/schedule";
@@ -104,7 +104,7 @@ export function SchedulePage() {
     const date = q.get("date");
     useEditor.setState({
       ...(view === "month" || view === "week" ? { mode: view } : {}),
-      ...(date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? { anchor: date } : {}),
+      ...(date && isISODate(date) ? { anchor: date } : {}),
     });
   }, []);
   useEffect(() => {
@@ -242,7 +242,7 @@ export function SchedulePage() {
                     days={period.days}
                     employees={data.employees}
                     byCell={byCell}
-                    statusByCell={data.statusByCell}
+                    unpublished={data.unpublished}
                     templates={templates}
                     coverage={data.coverage}
                     minutes={data.minutes}

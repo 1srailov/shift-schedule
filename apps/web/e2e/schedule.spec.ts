@@ -97,3 +97,59 @@ test("search filters employees by name", async ({ page }) => {
   await expect(page.locator('[role="row"]').filter({ hasText: "Соколов Артём" })).toBeVisible();
   await expect(page.getByText("Кузнецова Алина")).toBeHidden();
 });
+
+test("an invalid date in the URL falls back to today instead of crashing", async ({ page }) => {
+  await page.goto("/?view=week&date=2026-13-45");
+  await expect(page.getByTestId("period-label")).toBeVisible();
+  await expect(page.locator("[data-cell]").first()).toBeVisible();
+});
+
+test("re-adding a shift deleted earlier is saved even when another cached period still had it", async ({ page }) => {
+  const templates = (await (await fetch(`${API}/api/templates`)).json()) as { id: number; hotkey: number }[];
+  const morning = templates.find((t) => t.hotkey === 1)!;
+  await fetch(`${API}/api/shifts`, {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      upserts: [{ employeeId: 6, date: days[2], startTime: "07:00", endTime: "15:00", templateId: morning.id }],
+      deletes: [],
+    }),
+  });
+  const target = cell(page, 6, days[2]!);
+  const save = page.getByRole("button", { name: /^Сохранить/ });
+
+  // cache both the week and the month that contains it
+  await page.reload();
+  await page.getByRole("tab", { name: "Месяц" }).click();
+  await expect(page.getByTestId("period-label")).toHaveText("Январь 2030");
+  await page.getByRole("tab", { name: "Неделя" }).click();
+  await expect(target).toContainText("07 - 15");
+
+  await target.click();
+  await page.keyboard.press("Delete");
+  await save.click();
+  await expect(page.getByText("Изменения сохранены")).toBeVisible();
+  await expect(target).not.toContainText("07 - 15");
+
+  await page.keyboard.press("Escape");
+  await target.click();
+  await page.keyboard.press("1");
+  await expect(page.getByLabel("Несохранённых изменений: 1")).toBeVisible();
+  await save.click();
+  await expect(page.getByText("Изменения сохранены").last()).toBeVisible();
+
+  await page.reload();
+  await expect(target).toContainText("07 - 15");
+});
+
+test("new shifts are marked as unpublished until the schedule is published", async ({ page }) => {
+  const target = cell(page, 7, days[0]!);
+  await target.click();
+  await page.keyboard.press("3");
+  await expect(target.getByTestId("unpublished-dot")).toBeVisible();
+
+  await page.getByRole("button", { name: "Опубликовать" }).click();
+  await expect(page.getByText(/График опубликован/)).toBeVisible();
+  await expect(target.getByTestId("unpublished-dot")).toBeHidden();
+  await expect(target).toContainText("15 - 23");
+});

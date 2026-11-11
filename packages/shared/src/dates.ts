@@ -19,6 +19,13 @@ const MONTHS_NOMINATIVE = [
 const parse = (d: string) => Date.parse(`${d}T00:00:00Z`);
 const fmt = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 
+/** True for a real calendar date in "YYYY-MM-DD" form (rejects 2026-13-45, 2026-02-30). */
+export function isISODate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const ms = parse(value);
+  return !Number.isNaN(ms) && fmt(ms) === value;
+}
+
 export function addDays(date: string, days: number): string {
   return fmt(parse(date) + days * DAY);
 }
