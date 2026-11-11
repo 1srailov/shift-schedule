@@ -8,7 +8,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["var(--font-manrope)", "Manrope", "system-ui", "sans-serif"],
+        sans: ["'Manrope Variable'", "Manrope", "system-ui", "sans-serif"],
       },
       colors: {
         surface: "#F2F3F7", // page, sidebar, inputs, template cards

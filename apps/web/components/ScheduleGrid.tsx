@@ -21,7 +21,7 @@ import { cellRect, useEditor } from "@/lib/store";
 import { IconPlusCircle } from "./icons";
 import { ShiftCard, type ShiftTone } from "./ShiftCard";
 
-const EMP_COL = 220;
+/** Employee column: 220px as in the design, narrower on phones (see --emp-col). */
 const MONTH_COL = 64;
 const WEEK_COL_MIN = 96;
 
@@ -46,9 +46,9 @@ export function ScheduleGrid(p: Props) {
 
   const columns =
     p.mode === "week"
-      ? `${EMP_COL}px repeat(${p.days.length}, minmax(${WEEK_COL_MIN}px, 1fr))`
-      : `${EMP_COL}px repeat(${p.days.length}, ${MONTH_COL}px)`;
-  const minWidth = EMP_COL + p.days.length * (p.mode === "week" ? WEEK_COL_MIN : MONTH_COL);
+      ? `var(--emp-col) repeat(${p.days.length}, minmax(${WEEK_COL_MIN}px, 1fr))`
+      : `var(--emp-col) repeat(${p.days.length}, ${MONTH_COL}px)`;
+  const minWidth = `calc(var(--emp-col) + ${p.days.length * (p.mode === "week" ? WEEK_COL_MIN : MONTH_COL)}px)`;
 
   /* ---------------------------------------------------- mouse selection */
   const drag = useRef<{ origin: CellKey; base: Set<CellKey> } | null>(null);
@@ -95,6 +95,17 @@ export function ScheduleGrid(p: Props) {
     useEditor.getState().setSelection([...base, ...cellRect(origin, key, employeeIds, p.days)], origin);
   };
 
+  /* Month view: bring today's column into view when the period opens. */
+  const scroller = useRef<HTMLDivElement>(null);
+  const periodKey = `${p.mode}:${p.days[0]}`;
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el) return;
+    const idx = p.days.indexOf(today);
+    el.scrollLeft = p.mode === "month" && idx > 0 ? Math.max(0, (idx - 3) * MONTH_COL) : 0;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [periodKey]);
+
   useEffect(() => {
     const up = () => (drag.current = null);
     window.addEventListener("pointerup", up);
@@ -118,7 +129,8 @@ export function ScheduleGrid(p: Props) {
   );
 
   return (
-    <div className="scroll-thin relative min-h-0 flex-1 overflow-auto" data-testid="schedule-grid">
+    <div ref={scroller} className="scroll-thin relative min-h-0 flex-1 overflow-auto [--emp-col:150px] sm:[--emp-col:220px]"
+      data-testid="schedule-grid">
       <div style={{ minWidth }} className="flex min-h-full flex-col">
         {/* ---------------------------------------------------------- header */}
         <div

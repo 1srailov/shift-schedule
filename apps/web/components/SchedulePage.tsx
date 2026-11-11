@@ -96,6 +96,24 @@ export function SchedulePage() {
     return () => window.removeEventListener("keydown", onKey);
   });
 
+  /* ------------------------------------------ URL <-> view/date sync */
+  const anchor = useEditor((s) => s.anchor);
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const view = q.get("view");
+    const date = q.get("date");
+    useEditor.setState({
+      ...(view === "month" || view === "week" ? { mode: view } : {}),
+      ...(date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? { anchor: date } : {}),
+    });
+  }, []);
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    q.set("view", mode);
+    q.set("date", period.from);
+    window.history.replaceState(null, "", `?${q.toString()}`);
+  }, [mode, anchor, period.from]);
+
   /* ---------------------------------------- unsaved changes protection */
   useEffect(() => {
     if (!pending) return;

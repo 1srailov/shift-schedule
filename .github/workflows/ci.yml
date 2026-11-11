@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: shifts
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 2s --health-timeout 3s --health-retries 20
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/shifts
+      TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/shifts_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.11
+      - run: bun install --frozen-lockfile
+      - run: psql postgres://postgres:postgres@localhost:5432/postgres -c "create database shifts_test"
+      - name: Typecheck
+        run: bun run typecheck
+      - name: Unit + API integration tests
+        run: bun run test
+      - name: Build frontend
+        run: bun run build
+      - name: Start app (production mode)
+        run: |
+          cd apps/api
+          STATIC_DIR=../web/out PORT=3000 MIGRATE_ON_START=1 SEED_ON_START=1 bun src/index.ts &
+          for i in $(seq 1 30); do curl -sf localhost:3000/api/health && break; sleep 1; done
+      - name: E2E (Playwright)
+        working-directory: apps/web
+        env:
+          E2E_URL: http://localhost:3000
+          E2E_API_URL: http://localhost:3000
+        run: |
+          bunx playwright install --with-deps chromium
+          bunx playwright test

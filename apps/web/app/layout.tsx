@@ -1,14 +1,8 @@
 import type { Metadata } from "next";
-import { Manrope } from "next/font/google";
+// Self-hosted (bundled) — no network needed at build or runtime.
+import "@fontsource-variable/manrope/wght.css";
 import { Providers } from "./providers";
 import "./globals.css";
-
-const manrope = Manrope({
-  subsets: ["latin", "cyrillic"],
-  weight: ["400", "500", "600"],
-  variable: "--font-manrope",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "График смен — CRM",
@@ -17,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru" className={manrope.variable}>
+    <html lang="ru">
       <body>
         <Providers>{children}</Providers>
       </body>
